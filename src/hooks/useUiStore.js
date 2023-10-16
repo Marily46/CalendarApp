@@ -12,12 +12,10 @@ export const useUiStore = () => {
     } = useSelector( state => state.ui );
 
     const openDateModal = () => {
-        console.log("intentando abrir el modal")
         dispatch( onOpenDateModal() )
     }
 
     const closeDateModal = () => {
-        console.log("intentando cerrar el modal")
         dispatch( onCloseDateModal() )
     }
 

@@ -1,9 +1,9 @@
-import { addHours } from 'date-fns';
-import React, { useMemo, useState } from 'react'
+import { addHours, differenceInSeconds } from 'date-fns';
+import React, { useEffect, useMemo, useState } from 'react'
 import ReactModal from 'react-modal';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { useUiStore } from '../../hooks';
+import { useCalendarStore, useUiStore } from '../../hooks';
 
 const customStyles = {
     content: {
@@ -21,11 +21,12 @@ const customStyles = {
 export const CalendarModal = () => {
 
   const { isDateModalOpen, closeDateModal } = useUiStore();
-  console.log("Valor de isDateModalOpen:", isDateModalOpen);
+  const { activeEvent, startSavingEvent } = useCalendarStore();
+
   const [formSubmitted, setFormSubmitted] = useState(false);
     const [formValues, setFormValues] = useState({
-      title: 'Marily',
-      notes: 'Herrera',
+      title: '',
+      notes: '',
       start: new Date(),
       end: addHours( new Date(), 2),
     });
@@ -36,7 +37,14 @@ export const CalendarModal = () => {
       return ( formValues.title.length > 0 )
         ? ''
         : 'is-invalid';
-    }, [formValues.title, formSubmitted])
+    }, [formValues.title, formSubmitted]);
+
+    useEffect(() => {
+      if ( activeEvent !== null ){
+        setFormValues({...activeEvent});
+      }
+    }, [ activeEvent ])
+    
 
     const onInputChanged = ({ target }) => {
       setFormValues({
@@ -53,9 +61,28 @@ export const CalendarModal = () => {
     }
 
     const onCloseModal = () => {
-        console.log('cerrando modal');
         closeDateModal()
     }
+
+    const onSubmit = async( event ) => {
+      event.preventDefault();
+      setFormSubmitted(true);
+
+      const difference = differenceInSeconds( formValues.end, formValues.start);
+
+      if ( isNaN( difference ) || difference <= 0 ) {
+        Swal.fire('Fechas incorrectas', 'Revisar las fechas ingresadas', 'error');
+        return;
+      }
+
+      if ( formValues.title.length <= 0) return;
+      
+      await startSavingEvent(formValues);
+      closeDateModal();
+      setFormSubmitted(false);
+    }
+
+
 
   return (
     <ReactModal
@@ -69,7 +96,7 @@ export const CalendarModal = () => {
 
           <h1> Nuevo evento </h1>
           <hr />
-          <form className="container">
+          <form className="container" onSubmit={onSubmit}>
 
               <div className="form-group mb-2">
                   <label>Fecha y hora inicio</label>
